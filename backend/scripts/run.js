@@ -20,8 +20,8 @@ const main = async () => {
     const waveTxn = await waveContract.wave("tchauzinho #1");
     await waveTxn.wait();
 
-    const waveTxn2 = await waveContract.wave("tchauzinho #2");
-    await waveTxn2.wait();
+    // const waveTxn2 = await waveContract.wave("tchauzinho #2");
+    // await waveTxn2.wait();
 
     /*
     * Recupera o saldo do contrato para verificar o que aconteceu!

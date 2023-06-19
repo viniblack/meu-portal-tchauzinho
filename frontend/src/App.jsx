@@ -11,7 +11,7 @@ export default function App() {
   /**
    * Cria uma variável para guardar o endereço do contrato após o deploy!
    */
-  const contractAddress = "0x390baCd0F5Ee63B5fcB34F9c165A93Aadd8381f7";
+  const contractAddress = "0xA3290086D317255942A8430BbC11a62234A4fC5A";
 
   /**
    * Cria uma variável para referenciar o conteúdo ABI!
@@ -87,7 +87,7 @@ export default function App() {
         /*
         * Executar o tchauzinho a partir do contrato inteligente
         */
-        const waveTxn = await wavePortalContract.wave("esta é uma mensagem")
+        const waveTxn = await wavePortalContract.wave("esta é uma mensagem", { gasLimit: 300000 })
         console.log("Minerando...", waveTxn.hash);
 
         await waveTxn.wait();
@@ -106,41 +106,67 @@ export default function App() {
      * Método para consultar todos os tchauzinhos do contrato
      */
     const getAllWaves = async () => {
+      const { ethereum } = window;
+
       try {
-        const { ethereum } = window;
         if (ethereum) {
           const provider = new ethers.providers.Web3Provider(ethereum);
           const signer = provider.getSigner();
           const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
-
           /*
-           * Chama o método getAllWaves do seu contrato inteligente
-           */
+          * Chama o método getAllWaves do seu contrato inteligente
+          */
           const waves = await wavePortalContract.getAllWaves();
 
-          /*
-           * Apenas precisamos do endereço, data/horário, e mensagem na nossa tela, então vamos selecioná-los
-           */
-          let wavesCleaned = [];
-          waves.forEach(wave => {
-            wavesCleaned.push({
+          const wavesCleaned = waves.map(wave => {
+            return {
               address: wave.waver,
               timestamp: new Date(wave.timestamp * 1000),
-              message: wave.message
-            });
+              message: wave.message,
+            };
           });
 
-          /*
-           * Armazenando os dados
-           */
           setAllWaves(wavesCleaned);
         } else {
-          console.log("Objeto Ethereum não existe!")
+          console.log("Objeto Ethereum inexistente!");
         }
       } catch (error) {
         console.log(error);
       }
-    }
+    };
+
+    /**
+     * Escuta por eventos emitidos!
+     */
+    useEffect(() => {
+      let wavePortalContract;
+
+      const onNewWave = (from, timestamp, message) => {
+        console.log("NewWave", from, timestamp, message);
+        setAllWaves(prevState => [
+          ...prevState,
+          {
+            address: from,
+            timestamp: new Date(timestamp * 1000),
+            message: message,
+          },
+        ]);
+      };
+
+      if (window.ethereum) {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+        wavePortalContract.on("NewWave", onNewWave);
+      }
+
+      return () => {
+        if (wavePortalContract) {
+          wavePortalContract.off("NewWave", onNewWave);
+        }
+      };
+    }, []);
   }
 
   return (
