@@ -1,20 +1,33 @@
 const main = async () => {
-    const waveContract = await hre.ethers.deployContract("WavePortal");
+    const waveContract = await hre.ethers.deployContract("WavePortal", { value: hre.ethers.parseEther('0.1') });
     await waveContract.waitForDeployment();
     console.log("Contract deployed to:", waveContract.target);
 
-    let waveCount = await waveContract.getTotalWaves();
-    console.log(parseInt(waveCount))
+    /*
+    * Consulta saldo do contrato
+    */
+    let contractBalance = await hre.ethers.provider.getBalance(
+        waveContract.target
+    );
+    console.log(
+        "Saldo do contrato:",
+        hre.ethers.formatEther(contractBalance)
+    );
 
-    /**
-     * Deixe-me enviar alguns tchauzinhos!
-     */
+    /*
+    * Enviar tchauzinho
+    */
     let waveTxn = await waveContract.wave("Uma mensagem!");
-    await waveTxn.wait(); // aguarda a transação ser minerada
+    await waveTxn.wait();
 
-    const [_, randomPerson] = await hre.ethers.getSigners();
-    waveTxn = await waveContract.connect(randomPerson).wave("Outra mensagem!");
-    await waveTxn.wait(); // aguarda a transação ser minerada
+    /*
+    * Recupera o saldo do contrato para verificar o que aconteceu!
+    */
+    contractBalance = await hre.ethers.provider.getBalance(waveContract.target);
+    console.log(
+        "Saldo do  contrato:",
+        hre.ethers.formatEther(contractBalance)
+    );
 
     let allWaves = await waveContract.getAllWaves();
     console.log(allWaves);
