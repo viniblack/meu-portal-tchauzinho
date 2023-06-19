@@ -6,11 +6,12 @@ import abi from "./utils/WavePortal.json";
 export default function App() {
 
   const [currentAccount, setCurrentAccount] = useState("");
+  const [allWaves, setAllWaves] = useState([]);
 
   /**
    * Cria uma variável para guardar o endereço do contrato após o deploy!
    */
-  const contractAddress = "0xfE63BB4d0D8C14A7e0cc0CC4c4b8100Dc13D3C12";
+  const contractAddress = "0x390baCd0F5Ee63B5fcB34F9c165A93Aadd8381f7";
 
   /**
    * Cria uma variável para referenciar o conteúdo ABI!
@@ -86,7 +87,7 @@ export default function App() {
         /*
         * Executar o tchauzinho a partir do contrato inteligente
         */
-        const waveTxn = await wavePortalContract.wave();
+        const waveTxn = await wavePortalContract.wave("esta é uma mensagem")
         console.log("Minerando...", waveTxn.hash);
 
         await waveTxn.wait();
@@ -99,6 +100,46 @@ export default function App() {
       }
     } catch (error) {
       console.log(error)
+    }
+
+    /*
+     * Método para consultar todos os tchauzinhos do contrato
+     */
+    const getAllWaves = async () => {
+      try {
+        const { ethereum } = window;
+        if (ethereum) {
+          const provider = new ethers.providers.Web3Provider(ethereum);
+          const signer = provider.getSigner();
+          const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+          /*
+           * Chama o método getAllWaves do seu contrato inteligente
+           */
+          const waves = await wavePortalContract.getAllWaves();
+
+          /*
+           * Apenas precisamos do endereço, data/horário, e mensagem na nossa tela, então vamos selecioná-los
+           */
+          let wavesCleaned = [];
+          waves.forEach(wave => {
+            wavesCleaned.push({
+              address: wave.waver,
+              timestamp: new Date(wave.timestamp * 1000),
+              message: wave.message
+            });
+          });
+
+          /*
+           * Armazenando os dados
+           */
+          setAllWaves(wavesCleaned);
+        } else {
+          console.log("Objeto Ethereum não existe!")
+        }
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 
@@ -125,6 +166,15 @@ export default function App() {
             Conectar carteira
           </button>
         )}
+
+        {allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{ backgroundColor: "OldLace", marginTop: "16px", padding: "8px" }}>
+              <div>Endereço: {wave.address}</div>
+              <div>Data/Horário: {wave.timestamp.toString()}</div>
+              <div>Mensagem: {wave.message}</div>
+            </div>)
+        })}
       </div>
 
     </div>
