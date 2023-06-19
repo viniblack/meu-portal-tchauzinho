@@ -1,22 +1,23 @@
 const main = async () => {
-    const [owner, randomPerson] = await hre.ethers.getSigners();
     const waveContract = await hre.ethers.deployContract("WavePortal");
     await waveContract.waitForDeployment();
     console.log("Contract deployed to:", waveContract.target);
-    console.log("Contract deployed by:", owner.address);
 
-    let waveCount;
-    waveCount = await waveContract.getTotalWaves();
+    let waveCount = await waveContract.getTotalWaves();
+    console.log(parseInt(waveCount))
 
-    let waveTxn = await waveContract.wave();
-    await waveTxn.wait();
+    /**
+     * Deixe-me enviar alguns tchauzinhos!
+     */
+    let waveTxn = await waveContract.wave("Uma mensagem!");
+    await waveTxn.wait(); // aguarda a transação ser minerada
 
-    waveCount = await waveContract.getTotalWaves();
+    const [_, randomPerson] = await hre.ethers.getSigners();
+    waveTxn = await waveContract.connect(randomPerson).wave("Outra mensagem!");
+    await waveTxn.wait(); // aguarda a transação ser minerada
 
-    waveTxn = await waveContract.connect(randomPerson).wave();
-    await waveTxn.wait();
-
-    waveCount = await waveContract.getTotalWaves();
+    let allWaves = await waveContract.getAllWaves();
+    console.log(allWaves);
 };
 
 main().catch((error) => {
